@@ -82,12 +82,10 @@ summary{cursor:pointer;width:max-content;font-weight:600;text-decoration:underli
   html,body{background:#fff!important;margin:0!important;padding:0!important}
   .app{display:none!important}
   #print{display:block}
-  .sheet{position:relative;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid}
+  #print{width:100%}
+  .sheet{width:100%;position:relative;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid}
   .sheet:last-child{break-after:auto;page-break-after:auto}
-  .sheet img{position:absolute;display:block}
-  .sheet .lb{position:absolute;font:bold 10pt/1 Arial,sans-serif;color:#000;white-space:nowrap}
-  .sheet .lb.in{font-size:8pt;background:#fff;padding:.6mm 1.5mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .sheet .tk{position:absolute;background:#cf0067;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sheet img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
 }
 </style>
 <style id="pagecss"></style>
@@ -304,7 +302,7 @@ function render(){
   if(!busy&&!userErr){const low=!img.sample&&dpi<40;$("msg").textContent=low?"Atenção: a imagem é pequena para esse tamanho e vai sair borrada. Use menos folhas ou uma imagem maior.":"";$("msg").classList.toggle("err",low);}
   $("margin").disabled=S.noborder;
   const how=$("how");how.innerHTML="";
-  const steps=["Na janela de impressão do navegador, confira três coisas: Margens em “Nenhuma”, Escala em 100% (ou “Tamanho real”) e, se existir, a opção “Ajustar à página” desligada. São elas que deixam a margem grande quando ficam no padrão."];
+  const steps=[(L.orient==="land"?"As folhas deitadas saem giradas: coloque o papel na impressora do jeito normal (em pé) e vire a folha depois de impressa. ":"")+"Na janela de impressão do navegador, confira três coisas: Margens em “Nenhuma”, Escala em 100% (ou “Tamanho real”) e, se existir, a opção “Ajustar à página” desligada. São elas que deixam a margem grande quando ficam no padrão."];
   if(S.noborder)steps.push("Ative também a opção “sem borda” nas preferências da impressora. Depois é só colar pela ordem dos números, cada folha cobrindo "+L.ov+" mm da anterior.");
   else{
     steps.push(L.m>0?"A borda branca de "+L.m+" mm sai só na direita e embaixo de cada folha, para a cola.":"O app não coloca borda nenhuma: a imagem vai até a beirada do papel. O fiozinho branco que sobrar é o mínimo da própria impressora.");
@@ -325,34 +323,38 @@ async function doPrint(){
   try{
     const P=layout(),total=P.cols*P.rows;
     const srcDpi=25.4/Math.max(P.aw/img.full.width,P.ah/img.full.height),dpi=clamp(srcDpi,110,220);
-    let pxw=P.pw/25.4*dpi,pxh=P.ph/25.4*dpi;const lim=Math.sqrt(15e6/(pxw*pxh));if(lim<1){pxw*=lim;pxh*=lim;}
-    pxw=Math.round(pxw);pxh=Math.round(pxh);const k=pxw/P.pw;
-    $("pagecss").textContent="@page{size:"+P.W+"mm "+P.H+"mm;margin:0}";
+    // A folha inteira vira uma imagem. Folha deitada sai girada numa página em pé: assim o papel na
+    // impressora é sempre o normal (em pé) e o navegador não encolhe a página.
+    let pxw=P.W/25.4*dpi,pxh=P.H/25.4*dpi;const lim=Math.sqrt(15e6/(pxw*pxh));if(lim<1){pxw*=lim;pxh*=lim;}
+    pxw=Math.round(pxw);pxh=Math.round(pxh);const k=pxw/P.W,land=P.W>P.H;
+    const pgW=Math.min(P.W,P.H),pgH=Math.max(P.W,P.H);
+    $("pagecss").textContent="@page{size:"+pgW+"mm "+pgH+"mm;margin:0}";
     const cv=mk(pxw,pxh),ctx=cv.getContext("2d"),box=$("print"),waits=[];
-    const mm=v=>v+"mm";
+    const rot=land?mk(pxh,pxw):null,rctx=rot?rot.getContext("2d"):null;
     let n=0;
     for(let r=0;r<P.rows;r++)for(let c=0;c<P.cols;c++){
       n++;if(excluded.has(r+","+c))continue;go.textContent="Preparando folha "+n+" de "+total+"…";
       ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle="#fff";ctx.fillRect(0,0,pxw,pxh);
-      ctx.setTransform(k,0,0,k,-c*P.sx*k,-r*P.sy*k);
-      drawArt(ctx,P,img.full);
-      const blob=await new Promise(ok=>cv.toBlob(ok,"image/jpeg",.92));
-      const url=URL.createObjectURL(blob);urls.push(url);
-      const sh=document.createElement("div");sh.className="sheet";sh.style.width=mm(P.W);sh.style.height=mm(P.H-.3);
-      const im=new Image();im.style.left="0";im.style.top="0";im.style.width=mm(P.pw);im.style.height=mm(P.ph);
-      waits.push(new Promise(ok=>{im.onload=im.onerror=ok;}));im.src=url;sh.appendChild(im);
-      {
-        const lb=document.createElement("div");lb.className="lb";lb.textContent="FOLHA "+n+" de "+total+"   (linha "+(r+1)+", coluna "+(c+1)+")";
-        if(P.m>=5){lb.style.left=mm(8);lb.style.top=mm(P.ph+.7);sh.appendChild(lb);}
-        else if(P.ov>=10){ // sem borda do app: o número vai na faixa repetida de baixo, que a folha seguinte cobre
-          lb.classList.add("in");lb.style.left=mm(10);lb.style.top=mm(P.H-P.ov/2-2);sh.appendChild(lb);
-        }
+      ctx.setTransform(k,0,0,k,0,0);
+      ctx.save();ctx.beginPath();ctx.rect(0,0,P.pw,P.ph);ctx.clip();ctx.translate(-c*P.sx,-r*P.sy);drawArt(ctx,P,img.full);ctx.restore();
+      const txt="FOLHA "+n+" de "+total+"   (linha "+(r+1)+", coluna "+(c+1)+")";
+      ctx.textAlign="left";ctx.textBaseline="top";
+      if(P.m>=5){ctx.font="bold 3.4px Arial, Helvetica, sans-serif";ctx.fillStyle="#000";ctx.fillText(txt,8,P.ph+.9);}
+      else if(P.ov>=10){ // sem borda do app: o número vai na faixa repetida de baixo, que a folha seguinte cobre
+        ctx.font="bold 2.9px Arial, Helvetica, sans-serif";const tw=ctx.measureText(txt).width,y=P.H-P.ov/2-2;
+        ctx.fillStyle="#fff";ctx.fillRect(10,y,tw+3,4);ctx.fillStyle="#000";ctx.fillText(txt,11.5,y+.6);
       }
       if(P.m>=4&&P.ov>0){
-        const tk=(l,tp,w,h)=>{const d=document.createElement("div");d.className="tk";d.style.left=mm(l);d.style.top=mm(tp);d.style.width=mm(w);d.style.height=mm(h);sh.appendChild(d);};
-        if(c<P.cols-1)tk(P.pw-P.ov,P.ph+.5,.3,3);
-        if(r<P.rows-1)tk(P.pw+.5,P.ph-P.ov,3,.3);
+        ctx.fillStyle="#e6007e";
+        if(c<P.cols-1)ctx.fillRect(P.pw-P.ov,P.ph+.5,.3,3);
+        if(r<P.rows-1)ctx.fillRect(P.pw+.5,P.ph-P.ov,3,.3);
       }
+      let out=cv;
+      if(land){rctx.setTransform(0,1,-1,0,pxh,0);rctx.drawImage(cv,0,0);out=rot;}
+      const blob=await new Promise(ok=>out.toBlob(ok,"image/jpeg",.92));
+      const url=URL.createObjectURL(blob);urls.push(url);
+      const sh=document.createElement("div");sh.className="sheet";sh.style.height=(pgH-.3)+"mm";
+      const im=new Image();waits.push(new Promise(ok=>{im.onload=im.onerror=ok;}));im.src=url;sh.appendChild(im);
       box.appendChild(sh);await tick();
     }
     await Promise.all(waits);
