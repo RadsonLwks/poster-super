@@ -86,6 +86,7 @@ summary{cursor:pointer;width:max-content;font-weight:600;text-decoration:underli
   .sheet:last-child{break-after:auto;page-break-after:auto}
   .sheet img{position:absolute;display:block}
   .sheet .lb{position:absolute;font:bold 10pt/1 Arial,sans-serif;color:#000;white-space:nowrap}
+  .sheet .lb.in{font-size:8pt;background:#fff;padding:.6mm 1.5mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .sheet .tk{position:absolute;background:#cf0067;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 </style>
@@ -114,7 +115,7 @@ summary{cursor:pointer;width:max-content;font-weight:600;text-decoration:underli
     <details>
       <summary>Ajuste fino das bordas</summary>
       <div class="fine">
-        <div class="f"><label for="margin">Borda de cola, à direita e embaixo (mm)</label><input type="number" id="margin" min="0" max="25" step="1"></div>
+        <div class="f"><label for="margin">Borda branca extra para cola (mm)</label><input type="number" id="margin" min="0" max="25" step="1"></div>
         <div class="f"><label for="overlap">Imagem repetida na emenda (mm)</label><input type="number" id="overlap" min="0" max="30" step="1"></div>
       </div>
     </details>
@@ -145,8 +146,8 @@ summary{cursor:pointer;width:max-content;font-weight:600;text-decoration:underli
 "use strict";
 const $=id=>document.getElementById(id);
 const PAPERS={"A4":[210,297],"A3":[297,420],"Carta":[215.9,279.4],"Ofício":[215.9,355.6]};
-const DEF={paper:"A4",orient:"auto",count:3,margin:10,overlap:8,noborder:false,mode:"cols",widthCm:100,top:"",bottom:"",tcolor:"#ffffff",tsize:9,rowsFixed:false,rows:4,fit:"fill"};
-const KEY="folhaafolha.v3";
+const DEF={paper:"A4",orient:"auto",count:3,margin:0,overlap:15,noborder:false,mode:"cols",widthCm:100,top:"",bottom:"",tcolor:"#ffffff",tsize:9,rowsFixed:false,rows:4,fit:"fill"};
+const KEY="postersuper.v4";
 let S=Object.assign({},DEF);
 try{const j=JSON.parse(localStorage.getItem(KEY)||"null");if(j)for(const k in DEF)if(typeof j[k]===typeof DEF[k])S[k]=j[k];}catch(e){}
 if(!PAPERS[S.paper])S.paper="A4";
@@ -303,12 +304,13 @@ function render(){
   if(!busy&&!userErr){const low=!img.sample&&dpi<40;$("msg").textContent=low?"Atenção: a imagem é pequena para esse tamanho e vai sair borrada. Use menos folhas ou uma imagem maior.":"";$("msg").classList.toggle("err",low);}
   $("margin").disabled=S.noborder;
   const how=$("how");how.innerHTML="";
-  const steps=["Na janela de impressão, deixe a escala em 100% (tamanho real) e as margens em “Nenhuma”. O tamanho do papel já vem certo."];
-  if(L.m>0){
-    steps.push("A borda branca larga sai só na direita e embaixo de cada folha: é onde vai a cola. Na esquerda e em cima fica apenas o fiozinho branco que a própria impressora deixa.");
-    steps.push("Cole pela ordem dos números, da esquerda para a direita, cada folha por cima da anterior. Antes de colar, dobre para trás (ou corte) o fiozinho branco da esquerda e de cima, senão ele aparece como uma linha branca na emenda. Na primeira coluna e na primeira linha não precisa.");
-    steps.push("Encoste a beirada dobrada no risquinho rosa da folha anterior. A imagem se repete "+L.ov+" mm na emenda, então não sobra fresta nem precisa ajustar.");
-  }else steps.push("Cole pela ordem dos números, da esquerda para a direita, cada folha por cima da anterior, cobrindo os "+L.ov+" mm de imagem repetida.");
+  const steps=["Na janela de impressão do navegador, confira três coisas: Margens em “Nenhuma”, Escala em 100% (ou “Tamanho real”) e, se existir, a opção “Ajustar à página” desligada. São elas que deixam a margem grande quando ficam no padrão."];
+  if(S.noborder)steps.push("Ative também a opção “sem borda” nas preferências da impressora. Depois é só colar pela ordem dos números, cada folha cobrindo "+L.ov+" mm da anterior.");
+  else{
+    steps.push(L.m>0?"A borda branca de "+L.m+" mm sai só na direita e embaixo de cada folha, para a cola.":"O app não coloca borda nenhuma: a imagem vai até a beirada do papel. O fiozinho branco que sobrar é o mínimo da própria impressora.");
+    steps.push("Cole pela ordem dos números, da esquerda para a direita, cada folha por cima da anterior. Antes de colar, dobre para trás (ou corte) o fiozinho branco da esquerda e de cima. Na primeira coluna e na primeira linha não precisa.");
+    steps.push("A imagem se repete "+L.ov+" mm na emenda: passe a cola nessa faixa da direita e de baixo e alinhe o desenho. O número da folha fica escondido debaixo da folha seguinte.");
+  }
   steps.forEach(t=>{const li=document.createElement("li");li.textContent=t;how.appendChild(li);});
 }
 let userErr=false;
@@ -339,9 +341,12 @@ async function doPrint(){
       const sh=document.createElement("div");sh.className="sheet";sh.style.width=mm(P.W);sh.style.height=mm(P.H-.3);
       const im=new Image();im.style.left="0";im.style.top="0";im.style.width=mm(P.pw);im.style.height=mm(P.ph);
       waits.push(new Promise(ok=>{im.onload=im.onerror=ok;}));im.src=url;sh.appendChild(im);
-      if(P.m>=5){
+      {
         const lb=document.createElement("div");lb.className="lb";lb.textContent="FOLHA "+n+" de "+total+"   (linha "+(r+1)+", coluna "+(c+1)+")";
-        lb.style.left=mm(8);lb.style.top=mm(P.ph+.7);sh.appendChild(lb);
+        if(P.m>=5){lb.style.left=mm(8);lb.style.top=mm(P.ph+.7);sh.appendChild(lb);}
+        else if(P.ov>=10){ // sem borda do app: o número vai na faixa repetida de baixo, que a folha seguinte cobre
+          lb.classList.add("in");lb.style.left=mm(10);lb.style.top=mm(P.H-P.ov/2-2);sh.appendChild(lb);
+        }
       }
       if(P.m>=4&&P.ov>0){
         const tk=(l,tp,w,h)=>{const d=document.createElement("div");d.className="tk";d.style.left=mm(l);d.style.top=mm(tp);d.style.width=mm(w);d.style.height=mm(h);sh.appendChild(d);};
