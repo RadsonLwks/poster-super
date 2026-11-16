@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poster Super</title>
+<style>
+/* Poster Super. Mesa cinza neutra, papel branco, tinta preta. Amarelo é a ação (imprimir), magenta é emenda de folha.
+   A única ousadia é o letreiro do topo, cortado em folhas numeradas como o pôster que o app produz. */
+:root{
+  --desk:#e9e9e7; --panel:#ffffff; --ink:#141414; --muted:#595959; --soft:#d4d4d0; --field:#ffffff;
+  --yellow:#ffd400; --go:#118a43; --accent:#e6007e; --cyan:#0095c8; --bad:#c1121f;
+  --display:"Arial Black","Segoe UI Black","Helvetica Neue",system-ui,Arial,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--desk:#191919;--panel:#242424;--ink:#f3f3f3;--muted:#b3b3b3;--soft:#3d3d3d;--field:#2e2e2e;--accent:#ff4fa3;--cyan:#4cc9f0;--bad:#ff8a80;color-scheme:dark}
+}
+:root[data-theme="dark"]{--desk:#191919;--panel:#242424;--ink:#f3f3f3;--muted:#b3b3b3;--soft:#3d3d3d;--field:#2e2e2e;--accent:#ff4fa3;--cyan:#4cc9f0;--bad:#ff8a80;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--desk);color:var(--ink);font:400 16px/1.45 var(--body)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+[hidden]{display:none!important}
+.app{max-width:1100px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+
+.top{position:relative;overflow:hidden;background:var(--yellow);color:#141414;border:2px solid var(--ink);border-radius:6px;padding:34px 22px 16px}
+.top h1{font:900 clamp(30px,10.2vw,110px)/.9 var(--display);letter-spacing:-.03em;white-space:nowrap;text-transform:uppercase;margin:0}
+.top p{margin:10px 0 0;font-weight:600;font-size:16px}
+.top i{position:absolute;top:0;bottom:0;border-left:2px dashed #e6007e}
+.top b{position:absolute;top:7px;background:#141414;color:#fff;font:700 12px/1 var(--body);padding:4px 7px}
+.top .s1{left:25%}.top .s2{left:50%}.top .s3{left:75%}
+.top .t1{left:7px}.top .t2{left:calc(25% + 8px)}.top .t3{left:calc(50% + 8px)}.top .t4{left:calc(75% + 8px)}
+
+.controls{background:var(--panel);border:2px solid var(--ink);border-radius:6px;padding:16px;display:flex;flex-wrap:wrap;gap:16px 18px;align-items:flex-end}
+.f{display:flex;flex-direction:column;gap:6px}
+.f > span,.f > label{font-size:14px;font-weight:600;color:var(--ink)}
+select,input[type=number],input[type=text]{height:46px;padding:0 10px;background:var(--field);border:2px solid var(--ink);border-radius:4px}
+#cm{width:96px}
+.btn{height:46px;padding:0 18px;border-radius:4px;border:2px solid var(--ink);background:var(--panel);color:var(--ink);font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn:hover{background:var(--yellow);color:#141414}
+.f > label.pick{background:var(--ink);color:var(--panel);font-size:16px}
+.f > label.pick:hover{background:var(--yellow);color:#141414}
+.pick input{position:absolute;width:1px;height:1px;opacity:0}
+.pick:has(input:focus-visible){outline:3px solid var(--cyan);outline-offset:2px}
+.n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--panel);font-size:13px;font-weight:700;margin-right:7px}
+.step{display:flex;align-items:center;gap:6px}
+.step .btn{width:46px;padding:0;font-size:24px}
+.step #rauto{width:auto;padding:0 12px;font-size:15px}
+.step output{min-width:44px;text-align:center;font:900 26px/1 var(--display);font-variant-numeric:tabular-nums}
+.chk{display:flex;align-items:center;gap:9px;height:46px;cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--accent);margin:0}
+.print{margin-left:auto;background:var(--go);color:#ffffff;font-size:20px;font-weight:800;height:56px;padding:0 30px;box-shadow:4px 4px 0 var(--ink)}
+.print:hover{background:var(--go);color:#ffffff;transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.print:disabled{opacity:.6;cursor:wait;transform:none;box-shadow:4px 4px 0 var(--ink)}
+details{flex-basis:100%;font-size:15px}
+summary{cursor:pointer;width:max-content;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.fine{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}
+.fine input{width:110px}
+.fine input[type=text]{width:240px;max-width:100%}
+.fine input[type=color]{width:70px;height:46px;padding:3px;background:var(--field);border:2px solid var(--ink);border-radius:4px}
+.fine input[type=range]{width:160px;height:46px;accent-color:var(--accent)}
+
+.info{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline}
+.info strong{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.info span{color:var(--muted);font-size:14px}
+#msg{margin:0;font-size:15px;min-height:1.4em}
+#msg.err{color:var(--bad);font-weight:700}
+.stage{position:relative;height:min(64vh,640px);min-height:320px;background:var(--soft);border:2px solid var(--ink);border-radius:6px;overflow:hidden}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:pointer}
+.stage.drop::after{content:"Solte a imagem aqui";position:absolute;inset:10px;border:3px dashed var(--accent);border-radius:4px;display:grid;place-items:center;font:900 26px var(--display);color:var(--ink);background:var(--yellow);opacity:.94}
+.how{background:var(--panel);border:2px solid var(--ink);border-radius:6px;padding:16px 20px}
+.how h2{font-size:18px;font-weight:800;margin:0 0 6px}
+.how ol{margin:0;padding-left:22px;max-width:70ch}
+.how li{margin:4px 0}
+#print{display:none}
+@media (max-width:640px){.print{margin-left:0;flex:1 1 100%}.top{padding-top:30px}}
+@media (prefers-reduced-motion:reduce){.print:hover{transform:none}}
+
+@media print{
+  html,body{background:#fff!important;margin:0!important;padding:0!important}
+  .app{display:none!important}
+  #print{display:block}
+  .sheet{position:relative;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid}
+  .sheet:last-child{break-after:auto;page-break-after:auto}
+  .sheet img{position:absolute;display:block}
+  .sheet .lb{position:absolute;font:bold 10pt/1 Arial,sans-serif;color:#000;white-space:nowrap}
+  .sheet .tk{position:absolute;background:#cf0067;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+<style id="pagecss"></style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><h1>Poster Super</h1><p>Sua imagem vira um pôster gigante, impresso em folhas comuns.</p><i class="s1" aria-hidden="true"></i><i class="s2" aria-hidden="true"></i><i class="s3" aria-hidden="true"></i><b class="t1" aria-hidden="true">1</b><b class="t2" aria-hidden="true">2</b><b class="t3" aria-hidden="true">3</b><b class="t4" aria-hidden="true">4</b></header>
+
+  <div class="controls">
+    <div class="f"><span><b class="n">1</b>Imagem</span>
+      <label class="btn pick" for="file">Escolher imagem<input type="file" id="file" accept="image/*,.heic,.heif,.tif,.tiff,.svg,.bmp,.avif,.webp,.ico"></label></div>
+    <div class="f"><span><b class="n">2</b>Folhas na largura</span>
+      <div class="step"><button type="button" class="btn" id="less" aria-label="Menos folhas">−</button><output id="count" aria-live="polite"></output><button type="button" class="btn" id="more" aria-label="Mais folhas">+</button></div></div>
+    <div class="f"><span id="rlabel"><b class="n">3</b>Folhas na altura</span>
+      <div class="step"><button type="button" class="btn" id="rless" aria-label="Menos folhas na altura">−</button><output id="rows" aria-live="polite"></output><button type="button" class="btn" id="rmore" aria-label="Mais folhas na altura">+</button><button type="button" class="btn" id="rauto" title="Ajusta a altura à proporção da imagem">Ajustar à imagem</button></div></div>
+    <div class="f" id="f-fit"><label for="fit">Encaixe da imagem</label>
+      <select id="fit"><option value="fill">Preencher (corta as sobras)</option><option value="fit">Inteira (pode sobrar branco)</option><option value="stretch">Esticar (deforma)</option></select></div>
+    <div class="f"><label for="cm">ou largura (cm, aprox.)</label><input type="number" id="cm" min="10" max="600" step="1"></div>
+    <div class="f"><label for="paper">Papel</label>
+      <select id="paper"><option>A4</option><option>A3</option><option>Carta</option><option>Ofício</option></select></div>
+    <div class="f"><label for="orient">Folha</label>
+      <select id="orient"><option value="auto">Automática</option><option value="port">Em pé</option><option value="land">Deitada</option></select></div>
+    <label class="chk" for="noborder"><input type="checkbox" id="noborder">Minha impressora imprime sem borda</label>
+    <button type="button" class="btn print" id="go">Imprimir</button>
+    <details>
+      <summary>Ajuste fino das bordas</summary>
+      <div class="fine">
+        <div class="f"><label for="margin">Borda de cola, à direita e embaixo (mm)</label><input type="number" id="margin" min="0" max="25" step="1"></div>
+        <div class="f"><label for="overlap">Imagem repetida na emenda (mm)</label><input type="number" id="overlap" min="0" max="30" step="1"></div>
+      </div>
+    </details>
+    <details>
+      <summary>Adicionar texto</summary>
+      <div class="fine">
+        <div class="f"><label for="top">Texto em cima</label><input type="text" id="top" maxlength="80"></div>
+        <div class="f"><label for="bottom">Texto embaixo</label><input type="text" id="bottom" maxlength="80"></div>
+        <div class="f"><label for="tcolor">Cor</label><input type="color" id="tcolor"></div>
+        <div class="f"><label for="tsize">Tamanho</label><input type="range" id="tsize" min="3" max="20" step="1"></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="info"><strong id="size"></strong><span id="file-info"></span><span>Clique numa folha da prévia para tirá-la da impressão.</span></div>
+  <p id="msg" role="status"></p>
+  <div class="stage" id="stage"><canvas id="cv" aria-label="Prévia do pôster dividido em folhas"></canvas></div>
+
+  <div class="how">
+    <h2>Como montar</h2>
+    <ol id="how"></ol>
+  </div>
+</div>
+<div id="print" aria-hidden="true"></div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const PAPERS={"A4":[210,297],"A3":[297,420],"Carta":[215.9,279.4],"Ofício":[215.9,355.6]};
+const DEF={paper:"A4",orient:"auto",count:3,margin:10,overlap:8,noborder:false,mode:"cols",widthCm:100,top:"",bottom:"",tcolor:"#ffffff",tsize:9,rowsFixed:false,rows:4,fit:"fill"};
+const KEY="folhaafolha.v3";
+let S=Object.assign({},DEF);
+try{const j=JSON.parse(localStorage.getItem(KEY)||"null");if(j)for(const k in DEF)if(typeof j[k]===typeof DEF[k])S[k]=j[k];}catch(e){}
+if(!PAPERS[S.paper])S.paper="A4";
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+const nf=v=>v.toLocaleString("pt-BR",{maximumFractionDigits:1,minimumFractionDigits:1});
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+let img=null,L=null,busy=false,urls=[],view=null,gridKey="";const excluded=new Set();
+
+/* ---------- abrir imagem (qualquer formato) ---------- */
+function mk(w,h){const c=document.createElement("canvas");c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c;}
+function setImage(source,w,h,name,sample){
+  const f=Math.min(1,Math.sqrt(16e6/(w*h)));
+  const full=mk(w*f,h*f);full.getContext("2d").drawImage(source,0,0,full.width,full.height);
+  const p=Math.min(1,1400/Math.max(w,h));
+  const prev=mk(w*p,h*p),pc=prev.getContext("2d");pc.imageSmoothingQuality="high";pc.drawImage(source,0,0,prev.width,prev.height);
+  img={w,h,name,full,prev,sample:!!sample};
+  $("file-info").textContent=sample?"Imagem de exemplo. Escolha a sua para começar.":name+" · "+w+" × "+h+" px";
+  S.rows=clamp(layout(true).rows,1,20);excluded.clear();render();
+}
+function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("script"));document.head.appendChild(s);});}
+function decodeNative(blob){
+  return new Promise((ok,no)=>{
+    const url=URL.createObjectURL(blob),im=new Image();
+    im.onload=()=>{const w=im.naturalWidth||1600,h=im.naturalHeight||Math.round(1600*(im.height||1)/(im.width||1))||1600;ok({src:im,w,h,done:()=>URL.revokeObjectURL(url)});};
+    im.onerror=()=>{URL.revokeObjectURL(url);no(new Error("decode"));};
+    im.src=url;
+  });
+}
+async function decodeHeic(file){
+  if(!window.heic2any)await loadScript("https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js");
+  let out=await window.heic2any({blob:file,toType:"image/jpeg",quality:.92});
+  if(Array.isArray(out))out=out[0];
+  return decodeNative(out);
+}
+async function decodeTiff(file){
+  if(!window.UTIF)await loadScript("https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js");
+  const buf=await file.arrayBuffer(),ifds=window.UTIF.decode(buf);
+  let best=ifds[0];for(const d of ifds)if((d.t256?d.t256[0]:0)>(best.t256?best.t256[0]:0))best=d;
+  window.UTIF.decodeImage(buf,best);
+  const rgba=window.UTIF.toRGBA8(best),c=mk(best.width,best.height);
+  c.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(rgba.buffer,rgba.byteOffset,rgba.length),best.width,best.height),0,0);
+  return {src:c,w:best.width,h:best.height,done:()=>{}};
+}
+async function loadFile(file){
+  if(!file)return;
+  const name=file.name||"imagem colada",ext=(name.split(".").pop()||"").toLowerCase();
+  say("Abrindo a imagem…");
+  let r=null;
+  try{r=await decodeNative(file);}catch(e){
+    try{
+      if(/^hei[cf]$/.test(ext)||/hei[cf]/.test(file.type))r=await decodeHeic(file);
+      else if(/^tiff?$/.test(ext)||/tiff/.test(file.type))r=await decodeTiff(file);
+    }catch(e2){r=null;}
+  }
+  if(!r){say("Não consegui abrir esse arquivo. Se for foto de iPhone (HEIC) ou TIFF, é preciso estar com internet. Arquivos PDF, PSD e CDR precisam ser salvos antes como JPG ou PNG.",true);return;}
+  setImage(r.src,r.w,r.h,name,false);r.done();say("");
+}
+function sampleImage(){
+  const w=2000,h=2800,c=mk(w,h),x=c.getContext("2d");
+  const g=x.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,"#151a4a");g.addColorStop(.42,"#7a2a7c");g.addColorStop(.62,"#f0567a");g.addColorStop(.78,"#ffb25e");
+  x.fillStyle=g;x.fillRect(0,0,w,h);
+  const sg=x.createRadialGradient(w*.5,h*.6,40,w*.5,h*.6,620);sg.addColorStop(0,"#fff6c9");sg.addColorStop(.42,"#ffd36b");sg.addColorStop(.43,"rgba(255,190,90,.35)");sg.addColorStop(1,"rgba(255,190,90,0)");
+  x.fillStyle=sg;x.fillRect(0,0,w,h);
+  ["#b8406f","#8a2f6c","#5e2463","#3a1a52","#1d1238"].forEach((col,i)=>{
+    const base=h*(.66+i*.07),amp=70+i*22,k=.0022+i*.0007,ph=i*1.9;
+    x.fillStyle=col;x.beginPath();x.moveTo(0,h);
+    for(let px=0;px<=w;px+=10)x.lineTo(px,base+Math.sin(px*k+ph)*amp+Math.sin(px*k*2.7+ph*2)*amp*.35);
+    x.lineTo(w,h);x.closePath();x.fill();
+  });
+  return c;
+}
+
+/* ---------- geometria (mm) ---------- */
+function calc(orient,auto){
+  let [W,H]=PAPERS[S.paper];if(orient==="land")[W,H]=[H,W];
+  const m=S.noborder?0:clamp(S.margin,0,25),pw=W-m,ph=H-m; // borda só na direita e embaixo (onde cola)
+  const ov=clamp(S.overlap,0,30),sx=pw-ov,sy=ph-ov;
+  const need=(len,p,st)=>Math.max(1,Math.ceil((len-p)/st-1e-6)+1);
+  let cols,aw;
+  if(S.mode==="cm"){cols=clamp(Math.round((clamp(S.widthCm,10,600)*10-pw)/sx)+1,1,40);aw=pw+(cols-1)*sx;} // arredonda para folhas inteiras: sem coluna quase vazia
+  else{cols=clamp(S.count,1,20);aw=pw+(cols-1)*sx;}
+  const asp=img.full.width/img.full.height,PW=pw+(cols-1)*sx;
+  let ah=aw/asp,rows=need(ah,ph,sy),fit="auto";
+  if(!auto){
+    rows=clamp(S.rows,1,20);fit=S.fit;const PHf=ph+(rows-1)*sy;
+    if(fit==="fit"){aw=Math.min(PW,PHf*asp);ah=aw/asp;}else{aw=PW;ah=PHf;}
+  }
+  return {W,H,m,pw,ph,ov,sx,sy,cols,rows,aw,ah,fit,PW,PH:ph+(rows-1)*sy,orient};
+}
+function layout(auto){
+  if(S.orient!=="auto")return calc(S.orient,auto);
+  const a=calc("port",auto),b=calc("land",auto);
+  if(!auto){const d=x=>Math.abs(Math.log((x.PW/x.PH)/(img.full.width/img.full.height)));return d(a)<=d(b)?a:b;}
+  const ea=a.aw*a.ah/(a.cols*a.rows),eb=b.aw*b.ah/(b.cols*b.rows);
+  return ea>=eb?a:b;
+}
+
+function luma(hex){const n=parseInt(hex.slice(1),16);return(.299*(n>>16&255)+.587*(n>>8&255)+.114*(n&255))/255;}
+function drawText(ctx,P,txt,top){
+  txt=(txt||"").trim();if(!txt)return;
+  let fs=P.ah*S.tsize/100;const max=P.aw*.92,f=()=>{ctx.font="bold "+fs+"px Arial, Helvetica, sans-serif";};
+  f();const w=ctx.measureText(txt).width;if(w>max){fs*=max/w;f();}
+  ctx.textAlign="center";ctx.textBaseline=top?"top":"alphabetic";
+  const x=P.aw/2,y=top?P.ah*.035:P.ah*.965-fs*.1;
+  ctx.lineJoin="round";ctx.lineWidth=fs*.1;ctx.strokeStyle=luma(S.tcolor)>.55?"rgba(0,0,0,.75)":"rgba(255,255,255,.9)";
+  ctx.strokeText(txt,x,y);ctx.fillStyle=S.tcolor;ctx.fillText(txt,x,y);
+}
+function drawArt(ctx,P,src){
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
+  if(P.fit==="fill"){
+    const k=Math.max(P.aw/src.width,P.ah/src.height),dw=src.width*k,dh=src.height*k;
+    ctx.save();ctx.beginPath();ctx.rect(0,0,P.aw,P.ah);ctx.clip();ctx.drawImage(src,(P.aw-dw)/2,(P.ah-dh)/2,dw,dh);ctx.restore();
+  }else ctx.drawImage(src,0,0,P.aw,P.ah);
+  ctx.save();ctx.beginPath();ctx.rect(0,0,P.aw,P.ah);ctx.clip();drawText(ctx,P,S.top,true);drawText(ctx,P,S.bottom,false);ctx.restore();
+}
+/* ---------- prévia ---------- */
+function render(){
+  if(!img)return;
+  L=layout();
+  const gk=L.cols+"x"+L.rows;if(gk!==gridKey){gridKey=gk;excluded.clear();}
+  if(S.mode==="cm")S.count=clamp(L.cols,1,20);
+  const stage=$("stage"),cv=$("cv"),r=stage.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+  const w=Math.max(120,r.width),h=Math.max(120,r.height);
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#e6007e";
+  const pad=18,s=Math.min((w-2*pad)/L.PW,(h-2*pad)/L.PH),ox=(w-L.PW*s)/2,oy=(h-L.PH*s)/2;view={s,ox,oy};
+  ctx.fillStyle="#fff";ctx.fillRect(ox,oy,L.PW*s,L.PH*s);
+  ctx.save();ctx.translate(ox,oy);ctx.scale(s,s);drawArt(ctx,L,img.prev);ctx.restore();
+  ctx.strokeStyle="rgba(0,0,0,.35)";ctx.lineWidth=1;ctx.strokeRect(ox+.5,oy+.5,L.PW*s-1,L.PH*s-1);
+  ctx.strokeStyle=accent;ctx.lineWidth=1.5;ctx.setLineDash([6,4]);ctx.beginPath();
+  for(let c=1;c<L.cols;c++){const x=ox+(c*L.sx+L.ov/2)*s;ctx.moveTo(x,oy);ctx.lineTo(x,oy+L.PH*s);}
+  for(let rr=1;rr<L.rows;rr++){const y=oy+(rr*L.sy+L.ov/2)*s;ctx.moveTo(ox,y);ctx.lineTo(ox+L.PW*s,y);}
+  ctx.stroke();ctx.setLineDash([]);
+  const small=Math.min(L.sx,L.sy)*s<40;
+  ctx.font="700 "+(small?11:14)+"px system-ui,Arial,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  let n=0;
+  const cx=c=>c===0?0:c*L.sx+L.ov/2,cy=r=>r===0?0:r*L.sy+L.ov/2;
+  for(let rr=0;rr<L.rows;rr++)for(let c=0;c<L.cols;c++){
+    n++;const x0=ox+cx(c)*s,y0=oy+cy(rr)*s,x1=ox+(c===L.cols-1?L.PW:cx(c+1))*s,y1=oy+(rr===L.rows-1?L.PH:cy(rr+1))*s,off=excluded.has(rr+","+c);
+    if(off){ctx.fillStyle="rgba(20,23,28,.82)";ctx.fillRect(x0,y0,x1-x0,y1-y0);}
+    const t=String(n),bw=ctx.measureText(t).width+(small?8:14),bh=small?16:22;
+    ctx.fillStyle=off?accent:"rgba(20,23,28,.85)";ctx.fillRect(x0+6,y0+6,bw,bh);ctx.fillStyle="#fff";ctx.fillText(t,x0+6+bw/2,y0+6+bh/2+.5);
+    if(off&&!small){ctx.fillStyle="#fff";ctx.fillText("não imprime",(x0+x1)/2,(y0+y1)/2);}
+  }
+  const total=L.cols*L.rows,dpi=25.4/Math.max(L.aw/img.w,L.ah/img.h);
+  $("rows").textContent=L.rows;
+  $("count").textContent=S.count;
+  $("size").textContent="Pôster de "+nf(L.aw/10)+" × "+nf(L.ah/10)+" cm, "+total+(total===1?" folha ":" folhas ")+S.paper+(L.orient==="land"?(total===1?" deitada":" deitadas"):" em pé");
+  const sel=total-excluded.size;
+  if(!busy){$("go").textContent=sel?"Imprimir "+sel+(sel===1?" folha":" folhas")+(sel<total?" (de "+total+")":""):"Nenhuma folha marcada";$("go").disabled=sel===0;}
+  if(document.activeElement!==$("cm"))$("cm").value=Math.round(L.aw/10);
+  if(!busy&&!userErr){const low=!img.sample&&dpi<40;$("msg").textContent=low?"Atenção: a imagem é pequena para esse tamanho e vai sair borrada. Use menos folhas ou uma imagem maior.":"";$("msg").classList.toggle("err",low);}
+  $("margin").disabled=S.noborder;
+  const how=$("how");how.innerHTML="";
+  const steps=["Na janela de impressão, deixe a escala em 100% (tamanho real) e as margens em “Nenhuma”. O tamanho do papel já vem certo."];
+  if(L.m>0){
+    steps.push("A borda branca larga sai só na direita e embaixo de cada folha: é onde vai a cola. Na esquerda e em cima fica apenas o fiozinho branco que a própria impressora deixa.");
+    steps.push("Cole pela ordem dos números, da esquerda para a direita, cada folha por cima da anterior. Antes de colar, dobre para trás (ou corte) o fiozinho branco da esquerda e de cima, senão ele aparece como uma linha branca na emenda. Na primeira coluna e na primeira linha não precisa.");
+    steps.push("Encoste a beirada dobrada no risquinho rosa da folha anterior. A imagem se repete "+L.ov+" mm na emenda, então não sobra fresta nem precisa ajustar.");
+  }else steps.push("Cole pela ordem dos números, da esquerda para a direita, cada folha por cima da anterior, cobrindo os "+L.ov+" mm de imagem repetida.");
+  steps.forEach(t=>{const li=document.createElement("li");li.textContent=t;how.appendChild(li);});
+}
+let userErr=false;
+function say(t,err){const m=$("msg");userErr=!!(err&&t);m.textContent=t;m.classList.toggle("err",!!err);}
+
+/* ---------- impressão direta ---------- */
+const tick=()=>new Promise(r=>setTimeout(r,0));
+function cleanup(){urls.forEach(u=>URL.revokeObjectURL(u));urls=[];$("print").innerHTML="";}
+async function doPrint(){
+  if(busy||!img)return;
+  busy=true;const go=$("go");go.disabled=true;cleanup();
+  try{
+    const P=layout(),total=P.cols*P.rows;
+    const srcDpi=25.4/Math.max(P.aw/img.full.width,P.ah/img.full.height),dpi=clamp(srcDpi,110,220);
+    let pxw=P.pw/25.4*dpi,pxh=P.ph/25.4*dpi;const lim=Math.sqrt(15e6/(pxw*pxh));if(lim<1){pxw*=lim;pxh*=lim;}
+    pxw=Math.round(pxw);pxh=Math.round(pxh);const k=pxw/P.pw;
+    $("pagecss").textContent="@page{size:"+P.W+"mm "+P.H+"mm;margin:0}";
+    const cv=mk(pxw,pxh),ctx=cv.getContext("2d"),box=$("print"),waits=[];
+    const mm=v=>v+"mm";
+    let n=0;
+    for(let r=0;r<P.rows;r++)for(let c=0;c<P.cols;c++){
+      n++;if(excluded.has(r+","+c))continue;go.textContent="Preparando folha "+n+" de "+total+"…";
+      ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle="#fff";ctx.fillRect(0,0,pxw,pxh);
+      ctx.setTransform(k,0,0,k,-c*P.sx*k,-r*P.sy*k);
+      drawArt(ctx,P,img.full);
+      const blob=await new Promise(ok=>cv.toBlob(ok,"image/jpeg",.92));
+      const url=URL.createObjectURL(blob);urls.push(url);
+      const sh=document.createElement("div");sh.className="sheet";sh.style.width=mm(P.W);sh.style.height=mm(P.H-.3);
+      const im=new Image();im.style.left="0";im.style.top="0";im.style.width=mm(P.pw);im.style.height=mm(P.ph);
+      waits.push(new Promise(ok=>{im.onload=im.onerror=ok;}));im.src=url;sh.appendChild(im);
+      if(P.m>=5){
+        const lb=document.createElement("div");lb.className="lb";lb.textContent="FOLHA "+n+" de "+total+"   (linha "+(r+1)+", coluna "+(c+1)+")";
+        lb.style.left=mm(8);lb.style.top=mm(P.ph+.7);sh.appendChild(lb);
+      }
+      if(P.m>=4&&P.ov>0){
+        const tk=(l,tp,w,h)=>{const d=document.createElement("div");d.className="tk";d.style.left=mm(l);d.style.top=mm(tp);d.style.width=mm(w);d.style.height=mm(h);sh.appendChild(d);};
+        if(c<P.cols-1)tk(P.pw-P.ov,P.ph+.5,.3,3);
+        if(r<P.rows-1)tk(P.pw+.5,P.ph-P.ov,3,.3);
+      }
+      box.appendChild(sh);await tick();
+    }
+    await Promise.all(waits);
+    busy=false;go.disabled=false;render();
+    say("Abrindo a janela de impressão. Confira: escala 100% e margens “Nenhuma”.");
+    window.print();
+  }catch(e){
+    busy=false;go.disabled=false;cleanup();render();
+    say("Faltou memória para preparar as folhas. Tente com menos folhas ou uma imagem menor.",true);
+  }
+}
+window.addEventListener("afterprint",()=>setTimeout(cleanup,1500));
+$("go").addEventListener("click",doPrint);
+
+/* ---------- controles ---------- */
+function sync(){$("paper").value=S.paper;$("orient").value=S.orient;$("margin").value=S.margin;$("overlap").value=S.overlap;$("noborder").checked=S.noborder;$("top").value=S.top;$("bottom").value=S.bottom;$("tcolor").value=S.tcolor;$("tsize").value=S.tsize;$("fit").value=S.fit;}
+function changed(){persist();userErr=false;render();}
+$("less").addEventListener("click",()=>{S.mode="cols";S.count=clamp(S.count-1,1,20);changed();});
+$("more").addEventListener("click",()=>{S.mode="cols";S.count=clamp(S.count+1,1,20);changed();});
+const rstep=d=>{S.rows=clamp(S.rows+d,1,20);changed();};
+$("rless").addEventListener("click",()=>rstep(-1));$("rmore").addEventListener("click",()=>rstep(1));
+$("rauto").addEventListener("click",()=>{S.rows=clamp(layout(true).rows,1,20);changed();});
+$("fit").addEventListener("change",e=>{S.fit=e.target.value;changed();});
+$("cm").addEventListener("input",e=>{const v=parseFloat(e.target.value);if(isFinite(v)&&v>=10){S.mode="cm";S.widthCm=clamp(v,10,600);changed();}});
+$("cm").addEventListener("blur",()=>{if(L)$("cm").value=Math.round(L.aw/10);});
+["top","bottom","tcolor"].forEach(id=>$(id).addEventListener("input",e=>{S[id]=e.target.value;changed();}));
+$("tsize").addEventListener("input",e=>{S.tsize=clamp(parseFloat(e.target.value)||9,3,20);changed();});
+$("cv").addEventListener("click",e=>{
+  if(!view||!L||busy)return;const b=$("cv").getBoundingClientRect(),mx=(e.clientX-b.left-view.ox)/view.s,my=(e.clientY-b.top-view.oy)/view.s;
+  if(mx<0||my<0||mx>L.PW||my>L.PH)return;
+  let c=0,r=0;for(let i=L.cols-1;i>0;i--)if(mx>=i*L.sx+L.ov/2){c=i;break;}
+  for(let i=L.rows-1;i>0;i--)if(my>=i*L.sy+L.ov/2){r=i;break;}
+  const k=r+","+c;excluded.has(k)?excluded.delete(k):excluded.add(k);render();
+});
+$("paper").addEventListener("change",e=>{S.paper=e.target.value;changed();});
+$("orient").addEventListener("change",e=>{S.orient=e.target.value;changed();});
+$("noborder").addEventListener("change",e=>{S.noborder=e.target.checked;changed();});
+["margin","overlap"].forEach(id=>$(id).addEventListener("input",e=>{const v=parseFloat(e.target.value);if(isFinite(v)){S[id]=clamp(v,+e.target.min,+e.target.max);changed();}}));
+$("file").addEventListener("change",e=>{loadFile(e.target.files[0]);e.target.value="";});
+const stage=$("stage");
+["dragenter","dragover"].forEach(t=>document.addEventListener(t,e=>{e.preventDefault();stage.classList.add("drop");}));
+document.addEventListener("dragleave",e=>{if(e.relatedTarget===null)stage.classList.remove("drop");});
+document.addEventListener("drop",e=>{e.preventDefault();stage.classList.remove("drop");const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f)loadFile(f);});
+document.addEventListener("paste",e=>{const items=(e.clipboardData&&e.clipboardData.items)||[];for(const it of items)if(it.kind==="file"){loadFile(it.getAsFile());e.preventDefault();return;}});
+if(window.ResizeObserver)new ResizeObserver(()=>render()).observe(stage);else window.addEventListener("resize",render);
+
+sync();
+setImage(sampleImage(),2000,2800,"exemplo",true);
+})();
+</script>
+</body>
+</html>
