@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Poster Super</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#ffd400">
 <style>
 /* Poster Super. Mesa cinza neutra, papel branco, tinta preta. Amarelo é a ação (imprimir), magenta é emenda de folha.
    A única ousadia é o letreiro do topo, cortado em folhas numeradas como o pôster que o app produz. */
@@ -402,6 +406,7 @@ document.addEventListener("drop",e=>{e.preventDefault();stage.classList.remove("
 document.addEventListener("paste",e=>{const items=(e.clipboardData&&e.clipboardData.items)||[];for(const it of items)if(it.kind==="file"){loadFile(it.getAsFile());e.preventDefault();return;}});
 if(window.ResizeObserver)new ResizeObserver(()=>render()).observe(stage);else window.addEventListener("resize",render);
 
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 sync();
 setImage(sampleImage(),2000,2800,"exemplo",true);
 })();
