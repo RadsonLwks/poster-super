@@ -83,9 +83,10 @@ summary{cursor:pointer;width:max-content;font-weight:600;text-decoration:underli
   .app{display:none!important}
   #print{display:block}
   #print{width:100%}
-  .sheet{width:100%;position:relative;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid}
+  /* a folha ocupa a página inteira em unidades da própria página (não em mm): assim a escala do navegador não a encolhe */
+  .sheet{width:100%;height:99.7vh;position:relative;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid}
   .sheet:last-child{break-after:auto;page-break-after:auto}
-  .sheet img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+  .sheet img{position:absolute;left:0;top:0;width:100%;height:100%;display:block;object-fit:contain;object-position:0 0}
 }
 </style>
 <style id="pagecss"></style>
@@ -354,7 +355,7 @@ async function doPrint(){
       if(land){rctx.setTransform(0,1,-1,0,pxh,0);rctx.drawImage(cv,0,0);out=rot;}
       const blob=await new Promise(ok=>out.toBlob(ok,"image/jpeg",.92));
       const url=URL.createObjectURL(blob);urls.push(url);
-      const sh=document.createElement("div");sh.className="sheet";sh.style.height=(pgH-.3)+"mm";
+      const sh=document.createElement("div");sh.className="sheet";
       const im=new Image();waits.push(new Promise(ok=>{im.onload=im.onerror=ok;}));im.src=url;sh.appendChild(im);
       box.appendChild(sh);await tick();
     }
