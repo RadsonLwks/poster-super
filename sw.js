@@ -1,5 +1,5 @@
-// Poster Super: busca sempre a versão nova na internet; sem internet, usa a última guardada.
-const CACHE = "poster-super-v2";
+// PosterArte: busca sempre a versão nova na internet; sem internet, usa a última guardada.
+const CACHE = "posterarte-v3";
 self.addEventListener("install", e => { self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(self.clients.claim()); });
 self.addEventListener("fetch", e => {

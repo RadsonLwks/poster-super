@@ -1,6 +1,6 @@
 {
-  "name": "Poster Super",
-  "short_name": "Poster Super",
+  "name": "PosterArte",
+  "short_name": "PosterArte",
   "description": "Imprime um pôster gigante em folhas comuns.",
   "lang": "pt-BR",
   "start_url": "./",
